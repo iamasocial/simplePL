@@ -10,14 +10,14 @@ import (
 
 func main() {
 	input := `
-	foo(x, y): ((x*y+2)*(25-x/y));
+	foo(x, y): ((x*y+2)*(25-x/y))/(3-(x+2*y));
 	myfoo2(z): z*z+4;
 	myvar=15;
 	bg=25.0;
 	ccc=myfoo2(bg+myvar)*15+foo(bg*25,(6*myfoo2(myvar-10)));
 	print ccc;
 	bg=ccc*myvar;
-	print bg;
+	print;
 	`
 	var tokens []lexer.Token
 	lex := lexer.NewLexer(input)
@@ -29,14 +29,11 @@ func main() {
 			break
 		}
 	}
-	// fmt.Println(tokens)
 	parser := parser.NewParser(tokens)
 	ast := parser.Parse()
 
 	// // Вывод AST в виде дерева
-	printAST(ast, 0)
-	// fmt.Println(ast.Children[2].Children[0].Type)
-	// fmt.Println(len(ast.Children[2].Children[0].Children))
+	// printAST(ast, 0)
 	inter := interpreter.NewInterpreter()
 	err := inter.Execute(ast)
 	if err != nil {

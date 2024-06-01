@@ -29,17 +29,17 @@ func (i *Interpreter) Execute(node *parser.Node) error {
 				return err
 			}
 			i.vars[varName] = value
-			// node.Children[0].Children = node.Children[0].Children[1:]
-			// fmt.Println(varName, i.vars[varName])
-			// fmt.Println("assign ok")
 		case "PrintStatement":
-			value, err := i.Evaluate(node.Children[0].Children[0])
-			if err != nil {
-				return err
+			switch len(node.Children[0].Children) == 0 {
+			case true:
+				i.printAllVars()
+			case false:
+				value, err := i.Evaluate(node.Children[0].Children[0])
+				if err != nil {
+					return err
+				}
+				fmt.Println(value)
 			}
-
-			fmt.Println(value)
-			node.Children[0].Children = node.Children[0].Children[1:]
 		case "FunctionDefinition":
 			i.functions[node.Children[0].Children[0].Value] = node.Children[0]
 		default:
@@ -87,35 +87,6 @@ func (i *Interpreter) Evaluate(node *parser.Node) (string, error) {
 }
 
 func applyOperator(left, right, operator string) (string, error) {
-	// leftValue, err := strconv.Atoi(left)
-	// if err != nil {
-	// 	leftValue, err := strconv.ParseFloat(left, 64)
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
-	// }
-
-	// rightValue, err := strconv.Atoi(right)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// switch operator {
-	// case "+":
-	// 	return strconv.Itoa(leftValue + rightValue), nil
-	// case "-":
-	// 	return strconv.Itoa(leftValue - rightValue), nil
-	// case "*":
-	// 	return strconv.Itoa(leftValue * rightValue), nil
-	// case "/":
-	// 	if rightValue == 0 {
-	// 		return "", fmt.Errorf("division by zero")
-	// 	}
-	// 	return strconv.Itoa(leftValue / rightValue), nil
-	// default:
-	// 	return "", fmt.Errorf("unknow operator %s", operator)
-	// }
-
 	leftInt, errLeftInt := strconv.Atoi(left)
 	rightInt, errRightInt := strconv.Atoi(right)
 
@@ -162,6 +133,9 @@ func applyOperator(left, right, operator string) (string, error) {
 	default:
 		return "", fmt.Errorf("unknow operator %s", operator)
 	}
+	if result == float64(int(result)) {
+		return strconv.FormatFloat(result, 'f', 1, 64), nil
+	}
 	return strconv.FormatFloat(result, 'f', -1, 64), nil
 
 }
@@ -202,4 +176,10 @@ func (i *Interpreter) evaluateFunctionCall(node *parser.Node) (string, error) {
 	i.vars = savedVars
 
 	return result, nil
+}
+
+func (i *Interpreter) printAllVars() {
+	for key, value := range i.vars {
+		fmt.Printf("%s: %s\n", key, value)
+	}
 }

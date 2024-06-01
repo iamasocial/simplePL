@@ -50,6 +50,9 @@ func (p *Parser) parseStatement() *Node {
 
 func (p *Parser) ParsePrintStatement() *Node {
 	p.moveRight()
+	if p.match(lexer.SEMICOLON) {
+		return &Node{Type: "PrintStatement", Children: []*Node{}}
+	}
 	expression := p.parseExpression()
 	return &Node{Type: "PrintStatement", Children: []*Node{expression}}
 }
@@ -82,33 +85,6 @@ func (p *Parser) parseFunctionDefinition() *Node {
 }
 
 func (p *Parser) parseParameterList() *Node {
-	// parameters := &Node{Type: "ParameterList", Children: []*Node{}}
-	// for {
-	// 	if p.match(lexer.LPAREN) {
-	// 		p.moveRight()
-	// 		continue
-	// 	}
-	// 	if p.match(lexer.IDENT) || p.match(lexer.INT) || p.match(lexer.FLOAT) {
-	// 		parameters.Children = append(parameters.Children, p.moveRight())
-	// 	}
-	// 	if p.match(lexer.FUNC) {
-	// 		parameters.Children = append(parameters.Children, p.parseFunction())
-	// 	}
-
-	// 	if p.match(lexer.COMMA) {
-	// 		p.moveRight()
-	// 		continue
-	// 	}
-
-	// 	if p.match(lexer.RPAREN) {
-	// 		p.moveRight()
-	// 		break
-	// 	} else {
-	// 		panic("Parse parameter list error")
-	// 	}
-	// }
-
-	// return parameters
 	parameters := &Node{Type: "ParameterList", Children: []*Node{}}
 	for !p.match(lexer.RPAREN) {
 		expression := p.parseExpression()
@@ -159,10 +135,6 @@ func (p *Parser) parseTerm() *Node {
 func (p *Parser) parseFactor() *Node {
 	if p.match(lexer.INT) || p.match(lexer.FLOAT) || p.match(lexer.IDENT) {
 		node := p.moveRight()
-		// if p.match(lexer.LPAREN) {
-		// 	p.moveLeft()
-		// 	return p.parseFunction()
-		// }
 		return node
 	}
 
@@ -198,10 +170,3 @@ func (p *Parser) moveLeft() *Node {
 	p.pos--
 	return &Node{Type: token.Type.String(), Value: token.Value}
 }
-
-// func (p *Parser) peek() lexer.Token {
-// 	if p.pos < len(p.tokens) && p.pos > -1 {
-// 		return p.tokens[p.pos]
-// 	}
-// 	return lexer.Token{Type: lexer.EOF, Value: ""}
-// }
