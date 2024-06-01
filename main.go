@@ -9,19 +9,15 @@ import (
 )
 
 func main() {
-	// input := `foo(x, y): ((x*y+2)*(25-x/y));
-	// myfoo2(z): z*z+4;
-	// myvar(i)=15;
-	// bg(f)=25;
-	// ccc=myfoo2(bg+myvar)*15+foo(bg*25,(6*myfoo2(myvar-10)));
-	// print ccc;
-	// bg=ccc*myvar;
-	// print bg;
-	// `
 	input := `
-	foo(x): x*x;
-	a = foo(5.0);
-	print a;
+	foo(x, y): ((x*y+2)*(25-x/y));
+	myfoo2(z): z*z+4;
+	myvar=15;
+	bg=25.0;
+	ccc=myfoo2(bg+myvar)*15+foo(bg*25,(6*myfoo2(myvar-10)));
+	print ccc;
+	bg=ccc*myvar;
+	print bg;
 	`
 	var tokens []lexer.Token
 	lex := lexer.NewLexer(input)

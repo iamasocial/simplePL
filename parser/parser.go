@@ -57,7 +57,7 @@ func (p *Parser) ParsePrintStatement() *Node {
 func (p *Parser) parseFunction() *Node {
 	identifier := p.moveRight()
 	if p.match(lexer.LPAREN) {
-		// p.moveRight()
+		p.moveRight()
 		parameters := p.parseParameterList()
 		if p.match(lexer.COLON) {
 			for _, value := range parameters.Children {
@@ -82,38 +82,47 @@ func (p *Parser) parseFunctionDefinition() *Node {
 }
 
 func (p *Parser) parseParameterList() *Node {
-	parameters := &Node{Type: "ParameterList", Children: []*Node{}}
-	for {
-		if p.match(lexer.LPAREN) {
-			p.moveRight()
-			continue
-		}
-		if p.match(lexer.IDENT) || p.match(lexer.INT) || p.match(lexer.FLOAT) {
-			parameters.Children = append(parameters.Children, p.moveRight())
-		}
-		if p.match(lexer.FUNC) {
-			parameters.Children = append(parameters.Children, p.parseFunction())
-		}
+	// parameters := &Node{Type: "ParameterList", Children: []*Node{}}
+	// for {
+	// 	if p.match(lexer.LPAREN) {
+	// 		p.moveRight()
+	// 		continue
+	// 	}
+	// 	if p.match(lexer.IDENT) || p.match(lexer.INT) || p.match(lexer.FLOAT) {
+	// 		parameters.Children = append(parameters.Children, p.moveRight())
+	// 	}
+	// 	if p.match(lexer.FUNC) {
+	// 		parameters.Children = append(parameters.Children, p.parseFunction())
+	// 	}
 
+	// 	if p.match(lexer.COMMA) {
+	// 		p.moveRight()
+	// 		continue
+	// 	}
+
+	// 	if p.match(lexer.RPAREN) {
+	// 		p.moveRight()
+	// 		break
+	// 	} else {
+	// 		panic("Parse parameter list error")
+	// 	}
+	// }
+
+	// return parameters
+	parameters := &Node{Type: "ParameterList", Children: []*Node{}}
+	for !p.match(lexer.RPAREN) {
+		expression := p.parseExpression()
+		parameters.Children = append(parameters.Children, expression)
 		if p.match(lexer.COMMA) {
 			p.moveRight()
 			continue
 		}
-
-		if p.match(lexer.RPAREN) {
-			p.moveRight()
-			break
-		} else {
-			panic("Parse parameter list error")
+		if !p.match(lexer.RPAREN) {
+			panic("expected ',' or '(' in parameter list")
 		}
 	}
-
+	p.moveRight()
 	return parameters
-	// parameters := &Node{Type: "ParameterList", Children: []*Node{}}
-	// for !p.match(lexer.RPAREN) {
-	// 	expression := p.parseExpression()
-	// 	parameters.Children = append(parameters.Children, expression)
-	// }
 }
 
 func (p *Parser) parseAssignmentStatement() *Node {
