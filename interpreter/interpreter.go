@@ -183,3 +183,8 @@ func (i *Interpreter) printAllVars() {
 		fmt.Printf("%s: %s\n", key, value)
 	}
 }
+
+func (i *Interpreter) Clear() {
+	i.vars = nil
+	i.functions = nil
+}

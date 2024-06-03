@@ -170,3 +170,8 @@ func (p *Parser) moveLeft() *Node {
 	p.pos--
 	return &Node{Type: token.Type.String(), Value: token.Value}
 }
+
+func (p *Parser) Clear() {
+	p.pos = 0
+	p.tokens = nil
+}
