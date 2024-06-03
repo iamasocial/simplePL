@@ -51,6 +51,10 @@ func (l *Lexer) NextToken() Token {
 		tok = NewToken(LPAREN, string(l.currentChar))
 	} else if l.currentChar == ')' {
 		tok = NewToken(RPAREN, string(l.currentChar))
+	} else if l.currentChar == '{' {
+		tok = NewToken(LBRACKET, string(l.currentChar))
+	} else if l.currentChar == '}' {
+		tok = NewToken(RBRACKET, string(l.currentChar))
 	} else if l.currentChar == ',' {
 		tok = NewToken(COMMA, string(l.currentChar))
 	} else if l.currentChar == '+' {

@@ -2,21 +2,64 @@ package interpreter
 
 import (
 	"fmt"
+	"os"
 	"spl/lexer"
 	"spl/parser"
 	"strconv"
 )
 
 type Interpreter struct {
-	vars      map[string]string
-	functions map[string]*parser.Node
+	currentScope *Scope
 }
 
 func NewInterpreter() *Interpreter {
 	return &Interpreter{
-		vars:      make(map[string]string),
-		functions: make(map[string]*parser.Node),
+		currentScope: NewScope(nil),
 	}
+}
+
+func (i *Interpreter) EnterScope() {
+	i.currentScope = NewScope(i.currentScope)
+}
+
+func (i *Interpreter) ExitScope() {
+	if i.currentScope != nil {
+		i.currentScope = i.currentScope.parent
+	} else {
+		fmt.Println("error: attempt to exit global scopa")
+		os.Exit(1)
+	}
+
+}
+
+func (i *Interpreter) AssignVariable(name, value string) {
+	i.currentScope.vars[name] = value
+}
+
+func (i *Interpreter) FindVariable(name string) (string, error) {
+	scope := i.currentScope
+	for scope != nil {
+		if value, ok := scope.vars[name]; ok {
+			return value, nil
+		}
+		scope = scope.parent
+	}
+	return "", fmt.Errorf("variable %s not defined", name)
+}
+
+func (i *Interpreter) AssignFunction(name string, node *parser.Node) {
+	i.currentScope.functions[name] = node
+}
+
+func (i *Interpreter) FindFunction(name string) (*parser.Node, error) {
+	scope := i.currentScope
+	for scope != nil {
+		if function, ok := scope.functions[name]; ok {
+			return function, nil
+		}
+		scope = scope.parent
+	}
+	return nil, fmt.Errorf("function %s not defined", name)
 }
 
 func (i *Interpreter) Execute(node *parser.Node) error {
@@ -28,7 +71,7 @@ func (i *Interpreter) Execute(node *parser.Node) error {
 			if err != nil {
 				return err
 			}
-			i.vars[varName] = value
+			i.AssignVariable(varName, value)
 		case "PrintStatement":
 			switch len(node.Children[0].Children) == 0 {
 			case true:
@@ -41,7 +84,12 @@ func (i *Interpreter) Execute(node *parser.Node) error {
 				fmt.Println(value)
 			}
 		case "FunctionDefinition":
-			i.functions[node.Children[0].Children[0].Value] = node.Children[0]
+			// i.functions[node.Children[0].Children[0].Value] = node.Children[0]
+			i.AssignFunction(node.Children[0].Children[0].Value, node.Children[0])
+		case "Block":
+			i.EnterScope()
+			i.Execute(node.Children[0])
+			i.ExitScope()
 		default:
 			_, err := i.Evaluate(node.Children[0])
 			if err != nil {
@@ -56,16 +104,10 @@ func (i *Interpreter) Execute(node *parser.Node) error {
 
 func (i *Interpreter) Evaluate(node *parser.Node) (string, error) {
 	switch node.Type {
-	case lexer.INT.String():
-		return node.Value, nil
-	case lexer.FLOAT.String():
+	case lexer.INT.String(), lexer.FLOAT.String():
 		return node.Value, nil
 	case lexer.IDENT.String():
-		value, ok := i.vars[node.Value]
-		if !ok {
-			return "", fmt.Errorf("variable %s not defined", node.Value)
-		}
-		return value, nil
+		return i.FindVariable(node.Value)
 	case "BinaryOp":
 		leftValue, err := i.Evaluate(node.Children[0])
 		if err != nil {
@@ -142,9 +184,9 @@ func applyOperator(left, right, operator string) (string, error) {
 
 func (i *Interpreter) evaluateFunctionCall(node *parser.Node) (string, error) {
 	functionName := node.Children[0].Value
-	function, ok := i.functions[functionName]
-	if !ok {
-		return "", fmt.Errorf("function %s not defined", functionName)
+	function, err := i.FindFunction(functionName)
+	if err != nil {
+		return "", err
 	}
 
 	parameters := function.Children[1].Children
@@ -155,17 +197,17 @@ func (i *Interpreter) evaluateFunctionCall(node *parser.Node) (string, error) {
 	}
 
 	savedVars := make(map[string]string)
-	for key, value := range i.vars {
+	for key, value := range i.currentScope.vars {
 		savedVars[key] = value
 	}
 
-	for idx, param := range parameters {
-		argValue, err := i.Evaluate(arguments[idx])
+	for index, param := range parameters {
+		argValue, err := i.Evaluate(arguments[index])
 		if err != nil {
 			return "", err
 		}
 
-		i.vars[param.Value] = argValue
+		i.currentScope.vars[param.Value] = argValue
 	}
 
 	result, err := i.Evaluate(function.Children[2].Children[0])
@@ -173,18 +215,18 @@ func (i *Interpreter) evaluateFunctionCall(node *parser.Node) (string, error) {
 		return "", err
 	}
 
-	i.vars = savedVars
+	i.currentScope.vars = savedVars
 
 	return result, nil
 }
 
 func (i *Interpreter) printAllVars() {
-	for key, value := range i.vars {
+	for key, value := range i.currentScope.vars {
 		fmt.Printf("%s: %s\n", key, value)
 	}
 }
 
 func (i *Interpreter) Clear() {
-	i.vars = nil
-	i.functions = nil
+	i.currentScope.vars = nil
+	i.currentScope.functions = nil
 }

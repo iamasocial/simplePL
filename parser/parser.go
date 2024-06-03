@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+	"os"
 	"spl/lexer"
 )
 
@@ -13,11 +15,18 @@ func NewParser(tokens []lexer.Token) *Parser {
 	return &Parser{tokens: tokens, pos: 0}
 }
 
+var BracketCounter int
+
 func (p *Parser) Parse() *Node {
 	program := &Node{Type: "Program", Children: []*Node{}}
 	for !p.match(lexer.EOF) {
 		statement := p.parseStatement()
 		program.Children = append(program.Children, statement)
+		if p.match(lexer.RBRACKET) && BracketCounter > 0 {
+			BracketCounter--
+			p.moveRight()
+			continue
+		}
 		if p.match(lexer.SEMICOLON) {
 			p.moveRight()
 		} else {
@@ -43,6 +52,11 @@ func (p *Parser) parseStatement() *Node {
 
 	if p.match(lexer.PRINT) {
 		return p.ParsePrintStatement()
+	}
+
+	if p.match(lexer.LBRACKET) {
+		BracketCounter++
+		return p.parseScope()
 	}
 
 	panic("ParseStatement error")
@@ -153,6 +167,50 @@ func (p *Parser) parseFactor() *Node {
 	}
 
 	panic("expected factor")
+}
+
+func (p *Parser) parseScope() *Node {
+	// block := &Node{Type: "Block", Children: []*Node{}}
+	// for !p.match(lexer.RBRACKET) {
+	// 	if p.match(lexer.EOF) {
+	// 		fmt.Println("expected '}', found EOF")
+	// 		os.Exit(2)
+	// 	}
+	// 	statement := p.parseStatement()
+	// 	block.Children = append(block.Children, statement)
+	// 	if p.match(lexer.SEMICOLON) {
+	// 		p.moveRight()
+	// 	} else {
+	// 		fmt.Println("expected terminator ';'")
+	// 		os.Exit(3)
+	// 	}
+	// }
+	// p.moveRight()
+	// return block
+
+	block := &Node{Type: "Block", Children: []*Node{}}
+	p.moveRight()
+	for !p.match(lexer.EOF) {
+		if p.match(lexer.RBRACKET) {
+			return block
+		}
+
+		statement := p.parseStatement()
+		block.Children = append(block.Children, statement)
+		if p.match(lexer.RBRACKET) && BracketCounter > 0 {
+			BracketCounter--
+			p.moveRight()
+			continue
+		}
+		if p.match(lexer.SEMICOLON) {
+			p.moveRight()
+		} else {
+			fmt.Println("error: expected terminator ';'")
+			os.Exit(3)
+		}
+	}
+	p.moveRight()
+	return block
 }
 
 func (p *Parser) match(expected lexer.TokenType) bool {

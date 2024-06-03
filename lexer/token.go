@@ -16,6 +16,8 @@ const (
 	DIV
 	LPAREN
 	RPAREN
+	LBRACKET
+	RBRACKET
 	COMMA
 	COLON
 	SEMICOLON
@@ -37,6 +39,8 @@ var tokens = []string{
 	DIV:       "DIV",
 	LPAREN:    "LPAREN",
 	RPAREN:    "RPAREN",
+	LBRACKET:  "LBRACKET",
+	RBRACKET:  "RBRACKET",
 	COMMA:     "COMMA",
 	COLON:     "COLON",
 	SEMICOLON: "SEMICOLON",
