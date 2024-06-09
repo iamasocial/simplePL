@@ -7,23 +7,23 @@ import (
 )
 
 type Parser struct {
-	tokens []lexer.Token
-	pos    int
+	tokens           []lexer.Token
+	pos              int
+	bracketCounter   int
+	isInsideFunction bool
 }
 
 func NewParser(tokens []lexer.Token) *Parser {
-	return &Parser{tokens: tokens, pos: 0}
+	return &Parser{tokens: tokens, pos: 0, bracketCounter: 0, isInsideFunction: false}
 }
-
-var BracketCounter int
 
 func (p *Parser) Parse() *Node {
 	program := &Node{Type: "Program", Children: []*Node{}}
 	for !p.match(lexer.EOF) {
 		statement := p.parseStatement()
 		program.Children = append(program.Children, statement)
-		if p.match(lexer.RBRACKET) && BracketCounter > 0 {
-			BracketCounter--
+		if p.match(lexer.RBRACKET) && p.bracketCounter > 0 {
+			p.bracketCounter--
 			p.moveRight()
 			continue
 		}
@@ -55,7 +55,7 @@ func (p *Parser) parseStatement() *Node {
 	}
 
 	if p.match(lexer.LBRACKET) {
-		BracketCounter++
+		p.bracketCounter++
 		return p.parseScope()
 	}
 
@@ -83,6 +83,10 @@ func (p *Parser) parseFunction() *Node {
 				}
 			}
 			p.moveRight()
+			if p.match(lexer.RBRACKET) {
+				p.isInsideFunction = true
+				return &Node{Type: "FunctionDefinition", Children: []*Node{identifier, parameters, p.parseScope()}}
+			}
 			defenition := p.parseFunctionDefinition()
 			function := &Node{Type: "FunctionDefinition", Children: []*Node{identifier, parameters, defenition}}
 			return function
@@ -197,8 +201,8 @@ func (p *Parser) parseScope() *Node {
 
 		statement := p.parseStatement()
 		block.Children = append(block.Children, statement)
-		if p.match(lexer.RBRACKET) && BracketCounter > 0 {
-			BracketCounter--
+		if p.match(lexer.RBRACKET) && p.bracketCounter > 0 {
+			p.bracketCounter--
 			p.moveRight()
 			continue
 		}

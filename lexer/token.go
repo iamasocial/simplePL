@@ -21,6 +21,7 @@ const (
 	COMMA
 	COLON
 	SEMICOLON
+	RETURN
 	EOF
 	ILLEGAL
 )
@@ -44,6 +45,7 @@ var tokens = []string{
 	COMMA:     "COMMA",
 	COLON:     "COLON",
 	SEMICOLON: "SEMICOLON",
+	RETURN:    "RETURN",
 	EOF:       "EOF",
 	ILLEGAL:   "ILLGEGAL",
 }

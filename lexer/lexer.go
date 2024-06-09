@@ -40,80 +40,77 @@ func (l *Lexer) NextToken() Token {
 	var tok Token
 
 	// Пропускаем пробелы и символы перевода строки
-	for l.currentChar == ' ' || l.currentChar == '\n' || l.currentChar == '\r' || l.currentChar == '\t' {
-		l.readChar()
-	}
-
-	// Проверка на конец файла
-	if l.currentChar == 0 {
+	l.skipSpace()
+	switch l.currentChar {
+	case 0:
 		tok = NewToken(EOF, "")
-	} else if l.currentChar == '(' {
-		tok = NewToken(LPAREN, string(l.currentChar))
-	} else if l.currentChar == ')' {
-		tok = NewToken(RPAREN, string(l.currentChar))
-	} else if l.currentChar == '{' {
-		tok = NewToken(LBRACKET, string(l.currentChar))
-	} else if l.currentChar == '}' {
-		tok = NewToken(RBRACKET, string(l.currentChar))
-	} else if l.currentChar == ',' {
-		tok = NewToken(COMMA, string(l.currentChar))
-	} else if l.currentChar == '+' {
-		tok = NewToken(ADD, string(l.currentChar))
-	} else if l.currentChar == '-' {
-		tok = NewToken(SUB, string(l.currentChar))
-	} else if l.currentChar == '*' {
-		tok = NewToken(MUL, string(l.currentChar))
-	} else if l.currentChar == '/' {
-		tok = NewToken(DIV, string(l.currentChar))
-	} else if l.currentChar == '=' {
-		tok = NewToken(ASSIGN, string(l.currentChar))
-	} else if l.currentChar == ':' {
-		tok = NewToken(COLON, string(l.currentChar))
-	} else if l.currentChar == ';' {
-		tok = NewToken(SEMICOLON, string(l.currentChar))
-	} else if unicode.IsDigit(rune(l.currentChar)) {
-		// tok.Type = NUMBER
-		// var num strings.Builder
-		// for unicode.IsDigit(rune(l.currentChar)) {
-		// 	num.WriteByte(l.currentChar)
-		// 	l.readChar()
-		// }
-		// l.Position--
-		// tok.Value = num.String()
-		num, err := l.lexNumber()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+	case '(':
+		tok = NewToken(LPAREN, "(")
+	case ')':
+		tok = NewToken(RPAREN, ")")
+	case '{':
+		tok = NewToken(LBRACKET, "{")
+	case '}':
+		tok = NewToken(RBRACKET, "}")
+	case ',':
+		tok = NewToken(COMMA, ",")
+	case '+':
+		tok = NewToken(ADD, "+")
+	case '-':
+		tok = NewToken(SUB, "-")
+	case '*':
+		tok = NewToken(MUL, "*")
+	case '/':
+		tok = NewToken(DIV, "/")
+	case '=':
+		tok = NewToken(ASSIGN, "=")
+	case ':':
+		tok = NewToken(COLON, ":")
+	case ';':
+		tok = NewToken(SEMICOLON, ";")
+	default:
+		if unicode.IsDigit(rune(l.currentChar)) {
+			num, err := l.lexNumber()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 
-		if strings.Contains(num, ".") {
-			tok = NewToken(FLOAT, num)
-		} else {
-			tok = NewToken(INT, num)
-		}
-		l.Position--
-	} else if unicode.IsLetter(rune(l.currentChar)) {
-		var ident strings.Builder
-		for unicode.IsLetter(rune(l.currentChar)) || unicode.IsDigit(rune(l.currentChar)) {
-			ident.WriteByte(l.currentChar)
-			l.readChar()
-		}
-		if l.currentChar == '(' {
-			tok = NewToken(FUNC, ident.String())
+			if strings.Contains(num, ".") {
+				tok = NewToken(FLOAT, num)
+			} else {
+				tok = NewToken(INT, num)
+			}
 			return tok
 		}
-		l.Position--
-		switch ident.String() {
-		case "print":
-			tok = NewToken(PRINT, ident.String())
-		default:
-			tok = NewToken(IDENT, ident.String())
-		}
-	} else {
-		tok = NewToken(ILLEGAL, string(l.currentChar))
-		panic(fmt.Sprintf("Found illegal token: %s", tok.Value))
-	}
 
+		if unicode.IsLetter(rune(l.currentChar)) {
+			var ident strings.Builder
+			for unicode.IsLetter(rune(l.currentChar)) || unicode.IsDigit(rune(l.currentChar)) {
+				ident.WriteByte(l.currentChar)
+				l.readChar()
+			}
+
+			if l.currentChar == '(' {
+				tok = NewToken(FUNC, ident.String())
+				return tok
+			}
+
+			switch ident.String() {
+			case "print":
+				tok = NewToken(PRINT, "print")
+			case "return":
+				tok = NewToken(RETURN, "return")
+			default:
+				tok = NewToken(IDENT, ident.String())
+			}
+			return tok
+		}
+		tok = NewToken(ILLEGAL, string(l.currentChar))
+		fmt.Printf("error: found illegal token %s\n", tok.Value)
+		os.Exit(2)
+		return tok
+	}
 	l.readChar()
 	return tok
 }
@@ -141,4 +138,10 @@ func (l *Lexer) lexNumber() (string, error) {
 		return num.String(), nil
 	}
 
+}
+
+func (l *Lexer) skipSpace() {
+	for l.currentChar == ' ' || l.currentChar == '\n' || l.currentChar == '\r' || l.currentChar == '\t' {
+		l.readChar()
+	}
 }
