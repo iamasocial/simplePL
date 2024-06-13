@@ -223,42 +223,6 @@ func (i *Interpreter) evaluateFunctionCall(node *parser.Node) (string, error) {
 		return "", fmt.Errorf("unexpected token type %s", _type)
 	}
 
-	//////////////////////////////////////////
-	// functionName := node.Children[0].Value
-	// function, err := i.FindFunction(functionName)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// parameters := function.Children[1].Children
-	// arguments := node.Children[1].Children
-
-	// if len(parameters) != len(arguments) {
-	// 	return "", fmt.Errorf("incorrect number of arguments for function %s", functionName)
-	// }
-
-	// savedVars := make(map[string]string)
-	// for key, value := range i.currentScope.vars {
-	// 	savedVars[key] = value
-	// }
-
-	// for index, param := range parameters {
-	// 	argValue, err := i.Evaluate(arguments[index])
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
-
-	// 	i.currentScope.vars[param.Value] = argValue
-	// }
-
-	// result, err := i.Evaluate(function.Children[2].Children[0])
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// i.currentScope.vars = savedVars
-
-	// return result, nil
 }
 
 func (i *Interpreter) printAllVars() {
@@ -268,6 +232,5 @@ func (i *Interpreter) printAllVars() {
 }
 
 func (i *Interpreter) Clear() {
-	i.currentScope.vars = nil
-	i.currentScope.functions = nil
+	i.currentScope = nil
 }
