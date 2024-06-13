@@ -1,5 +1,15 @@
-foo(x, y): {    
+f1(x): x*x;
+f2(x,y): {
     a = 10;
-   
-    return x + y + a;
+    b = 12;
+    {
+        a = 20;
+        b = 30;
+        print;
+    }
+    print x;
+    print y;
+    return x*y*a*b;
 }
+abc = f2(10, f1(5.175+1.0));
+print;

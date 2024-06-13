@@ -26,7 +26,7 @@ func (i *Interpreter) ExitScope() {
 	if i.currentScope != nil {
 		i.currentScope = i.currentScope.parent
 	} else {
-		fmt.Println("error: attempt to exit global scopa")
+		fmt.Println("error: attempt to exit global scope")
 		os.Exit(1)
 	}
 
@@ -62,14 +62,14 @@ func (i *Interpreter) FindFunction(name string) (*parser.Node, error) {
 	return nil, fmt.Errorf("function %s not defined", name)
 }
 
-func (i *Interpreter) Execute(node *parser.Node) error {
+func (i *Interpreter) Execute(node *parser.Node) (string, error) {
 	for len(node.Children) != 0 {
 		switch node.Children[0].Type {
 		case "AssignmentStatement":
 			varName := node.Children[0].Value
 			value, err := i.Evaluate(node.Children[0].Children[0])
 			if err != nil {
-				return err
+				return "", err
 			}
 			i.AssignVariable(varName, value)
 		case "PrintStatement":
@@ -79,7 +79,7 @@ func (i *Interpreter) Execute(node *parser.Node) error {
 			case false:
 				value, err := i.Evaluate(node.Children[0].Children[0])
 				if err != nil {
-					return err
+					return "", err
 				}
 				fmt.Println(value)
 			}
@@ -90,16 +90,18 @@ func (i *Interpreter) Execute(node *parser.Node) error {
 			i.EnterScope()
 			i.Execute(node.Children[0])
 			i.ExitScope()
+		case "ReturnStatement":
+			return i.Evaluate(node.Children[0].Children[0])
 		default:
 			_, err := i.Evaluate(node.Children[0])
 			if err != nil {
-				return err
+				return "", err
 			}
 		}
 
 		node.Children = node.Children[1:]
 	}
-	return nil
+	return "", nil
 }
 
 func (i *Interpreter) Evaluate(node *parser.Node) (string, error) {
@@ -186,7 +188,7 @@ func (i *Interpreter) evaluateFunctionCall(node *parser.Node) (string, error) {
 	functionName := node.Children[0].Value
 	function, err := i.FindFunction(functionName)
 	if err != nil {
-		return "", err
+		return "", nil
 	}
 
 	parameters := function.Children[1].Children
@@ -196,28 +198,67 @@ func (i *Interpreter) evaluateFunctionCall(node *parser.Node) (string, error) {
 		return "", fmt.Errorf("incorrect number of arguments for function %s", functionName)
 	}
 
-	savedVars := make(map[string]string)
-	for key, value := range i.currentScope.vars {
-		savedVars[key] = value
-	}
+	i.EnterScope()
+	defer i.ExitScope()
 
 	for index, param := range parameters {
 		argValue, err := i.Evaluate(arguments[index])
 		if err != nil {
 			return "", err
 		}
-
 		i.currentScope.vars[param.Value] = argValue
 	}
 
-	result, err := i.Evaluate(function.Children[2].Children[0])
-	if err != nil {
-		return "", err
+	_type := function.Children[2].Type
+	switch _type {
+	case "ReturnStatement":
+		res, err := i.Evaluate(function.Children[2].Children[0])
+		if err != nil {
+			return "", err
+		}
+		return res, nil
+	case "Block":
+		return i.Execute(function.Children[2])
+	default:
+		return "", fmt.Errorf("unexpected token type %s", _type)
 	}
 
-	i.currentScope.vars = savedVars
+	//////////////////////////////////////////
+	// functionName := node.Children[0].Value
+	// function, err := i.FindFunction(functionName)
+	// if err != nil {
+	// 	return "", err
+	// }
 
-	return result, nil
+	// parameters := function.Children[1].Children
+	// arguments := node.Children[1].Children
+
+	// if len(parameters) != len(arguments) {
+	// 	return "", fmt.Errorf("incorrect number of arguments for function %s", functionName)
+	// }
+
+	// savedVars := make(map[string]string)
+	// for key, value := range i.currentScope.vars {
+	// 	savedVars[key] = value
+	// }
+
+	// for index, param := range parameters {
+	// 	argValue, err := i.Evaluate(arguments[index])
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+
+	// 	i.currentScope.vars[param.Value] = argValue
+	// }
+
+	// result, err := i.Evaluate(function.Children[2].Children[0])
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	// i.currentScope.vars = savedVars
+
+	// return result, nil
 }
 
 func (i *Interpreter) printAllVars() {

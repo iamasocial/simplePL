@@ -46,7 +46,7 @@ func (p *Parser) parseStatement() *Node {
 		}
 	}
 
-	if p.match(lexer.FUNC) {
+	if p.match(lexer.FUNC) && !p.isInsideFunction {
 		return p.parseFunction()
 	}
 
@@ -57,6 +57,10 @@ func (p *Parser) parseStatement() *Node {
 	if p.match(lexer.LBRACKET) {
 		p.bracketCounter++
 		return p.parseScope()
+	}
+
+	if p.match(lexer.RETURN) && p.isInsideFunction {
+		return p.parseReturnStatement()
 	}
 
 	panic("ParseStatement error")
@@ -83,9 +87,12 @@ func (p *Parser) parseFunction() *Node {
 				}
 			}
 			p.moveRight()
-			if p.match(lexer.RBRACKET) {
+			if p.match(lexer.LBRACKET) {
 				p.isInsideFunction = true
-				return &Node{Type: "FunctionDefinition", Children: []*Node{identifier, parameters, p.parseScope()}}
+				p.bracketCounter++
+				function := &Node{Type: "FunctionDefinition", Children: []*Node{identifier, parameters, p.parseScope()}}
+				p.isInsideFunction = false
+				return function
 			}
 			defenition := p.parseFunctionDefinition()
 			function := &Node{Type: "FunctionDefinition", Children: []*Node{identifier, parameters, defenition}}
@@ -98,7 +105,7 @@ func (p *Parser) parseFunction() *Node {
 
 func (p *Parser) parseFunctionDefinition() *Node {
 	defenition := p.parseExpression()
-	return &Node{Type: "FunctionBody", Value: "", Children: []*Node{defenition}}
+	return &Node{Type: "ReturnStatement", Value: "", Children: []*Node{defenition}}
 
 }
 
@@ -117,6 +124,11 @@ func (p *Parser) parseParameterList() *Node {
 	}
 	p.moveRight()
 	return parameters
+}
+
+func (p *Parser) parseReturnStatement() *Node {
+	p.moveRight()
+	return &Node{Type: "ReturnStatement", Children: []*Node{p.parseExpression()}}
 }
 
 func (p *Parser) parseAssignmentStatement() *Node {
@@ -156,7 +168,7 @@ func (p *Parser) parseFactor() *Node {
 		return node
 	}
 
-	if p.match(lexer.FUNC) {
+	if p.match(lexer.FUNC) && !p.isInsideFunction {
 		return p.parseFunction()
 	}
 
@@ -174,24 +186,6 @@ func (p *Parser) parseFactor() *Node {
 }
 
 func (p *Parser) parseScope() *Node {
-	// block := &Node{Type: "Block", Children: []*Node{}}
-	// for !p.match(lexer.RBRACKET) {
-	// 	if p.match(lexer.EOF) {
-	// 		fmt.Println("expected '}', found EOF")
-	// 		os.Exit(2)
-	// 	}
-	// 	statement := p.parseStatement()
-	// 	block.Children = append(block.Children, statement)
-	// 	if p.match(lexer.SEMICOLON) {
-	// 		p.moveRight()
-	// 	} else {
-	// 		fmt.Println("expected terminator ';'")
-	// 		os.Exit(3)
-	// 	}
-	// }
-	// p.moveRight()
-	// return block
-
 	block := &Node{Type: "Block", Children: []*Node{}}
 	p.moveRight()
 	for !p.match(lexer.EOF) {

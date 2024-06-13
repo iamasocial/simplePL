@@ -44,7 +44,7 @@ func main() {
 	// // Вывод AST в виде дерева
 	// printAST(ast, 0)
 	inter := interpreter.NewInterpreter()
-	err = inter.Execute(ast)
+	_, err = inter.Execute(ast)
 	if err != nil {
 		fmt.Println(err)
 		return
